@@ -7,10 +7,12 @@ These sections contains collections of detailed technical descriptions.
 :glob:
 :maxdepth: 2
 
-Nix Reference Manual <https://nixos.org/manual/nix/stable/>
-Nixpkgs Manual <https://nixos.org/manual/nixpkgs/stable/>
-NixOS Manual <https://nixos.org/manual/nixos/stable/>
-pinning-nixpkgs.md
 glossary.md
+./nix-manual.md
+Nixpkgs manual <https://nixos.org/manual/nixpkgs/stable/>
+NixOS manual <https://nixos.org/manual/nixos/stable/>
+Community projects <https://github.com/nix-community/>
+Support tools <https://github.com/nix-community/awesome-nix>
 ../recommended-reading.md
+pinning-nixpkgs.md
 ```

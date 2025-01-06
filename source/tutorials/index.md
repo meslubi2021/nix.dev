@@ -7,8 +7,12 @@ These sections contains series of lessons to get started.
 :glob:
 :maxdepth: 2
 
-install-nix.md
 first-steps/index.md
-nixos/index.md
+nix-language.md
+Packaging existing software <packaging-existing-software.md>
+Package parameters and overrides <callpackage.md>
+working-with-local-files.md
 cross-compilation.md
+module-system/index.md
+nixos/index.md
 ```

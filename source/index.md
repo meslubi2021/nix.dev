@@ -9,7 +9,10 @@ myst:
 
 # Welcome to nix.dev
 
-nix.dev is the home of official documentation for the Nix ecosystem, it contains:
+nix.dev is the home of official documentation for the Nix ecosystem.
+It is maintained by the [Nix documentation team](https://nixos.org/community/teams/documentation).
+
+If you're new here, {ref}`install Nix <install-nix>` and begin your journey with our tutorial series!
 
 ::::{grid} 2
 :::{grid-item-card} Tutorials
@@ -20,8 +23,8 @@ nix.dev is the home of official documentation for the Nix ecosystem, it contains
 Series of lessons to get started
 :::
 
-:::{grid-item-card} Recipes
-:link: recipes
+:::{grid-item-card} Guides
+:link: guides
 :link-type: ref
 :text-align: center
 
@@ -35,7 +38,7 @@ Guides to getting things done
 :link-type: ref
 :text-align: center
 
-Collections of detailed technical descriptions 
+Collections of detailed technical descriptions
 :::
 
 :::{grid-item-card} Concepts
@@ -47,16 +50,14 @@ Explanations of history and ideas in the Nix ecosystem
 :::
 ::::
 
-If you're new to the Nix ecosystem, begin your journey with {ref}`First Steps <first-steps>`!
-
 ## What can you do with Nix?
 
-The following illustrate of what can be achieved with the Nix ecosystem:
+The following list illustrates some of what can be achieved with the Nix ecosystem:
 
 - {ref}`Reproducible development environments <ad-hoc-envs>`.
 - Easy installation of software over URLs.
 - Easy transfer of software environments between computers.
-- {ref}`Declarative specification of Linux machines <deploying-nixos-using-terraform>`.
+- {ref}`Declarative specification of Linux machines <deploy-nixos-using-terraform>`.
 - {ref}`Reproducible integration testing using virtual machines <integration-testing-vms>`.
 - Avoidance of version conflicts with already installed software.
 - Installing software from source code.
@@ -67,18 +68,34 @@ The following illustrate of what can be achieved with the Nix ecosystem:
 - Remote deployments.
 - Atomic upgrades and rollbacks.
 
-## What is the origin of the name "Nix"?
 
-> The name *Nix* is derived from the Dutch word niks, meaning *nothing*;
-> build actions do not see anything that has not been explicitly declared as an input.
->
-> &mdash; <cite>[Nix: A Safe and Policy-Free System for Software Deployment](https://www.semanticscholar.org/paper/Nix%3A-A-Safe-and-Policy-Free-System-for-Software-Dolstra-Jonge/76eb395afe54d526797f6e12ce1c4fa14cda253f?p2df)</cite>
+## Who is Nix for?
+
+Nix is a tool for people who both need computers to do exactly as intended, repeatably, far into the future, and who are familiar with command line interfaces and plain text editors.
+
+You don't have to be a professional software developer and you don't need formal education in informatics to greatly benefit from Nix.
+However, experience with complex software projects and knowing some informatics helps with appreciating why it's useful and how it works.
+And it helps with learning how to use it effectively and [how to make improvements](how-to-contribute).
+
+You probably won't want to go back to a world without Nix if you're a:
+
+- Full-stack or back-end developer
+- Test engineer
+- Embedded systems developer
+- DevOps engineer
+- System administrator
+- Data scientist
+- Natural scientist
+- Student of a technical field
+- Open source software enthusiast
+
 
 ```{toctree}
 :hidden:
 
+install-nix.md
 tutorials/index.md
-recipes/index.md
+guides/index.md
 reference/index.md
 concepts/index.md
 contributing/index.md

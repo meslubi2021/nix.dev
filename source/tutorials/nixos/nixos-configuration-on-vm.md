@@ -6,45 +6,73 @@ One of the most important features of NixOS is the ability to configure the enti
 
 NixOS configurations can be used to test and use NixOS using a virtual machine, independent of an installation on a "bare metal" computer.
 
-:::{important}
-A NixOS configuration is a Nix language function following the [NixOS module](https://nixos.org/manual/nixos/stable/index.html#sec-writing-modules) convention. 
-:::
-
 ## What will you learn?
 
 This tutorial serves as an introduction creating NixOS virtual machines.
-Virtual machines are a practical tool for debugging NixOS configurations.
+Virtual machines are a practical tool for experimenting with or debugging NixOS configurations.
 
 ## What do you need?
 
-- A working [Nix installation](https://nixos.org/manual/nix/stable/installation/installation.html) on Linux, or [NixOS](https://nixos.org/manual/nixos/stable/index.html#sec-installation)
+- A Linux system with virtualisation support
+- (optional) A graphical environment for running a graphical virtual machine
+- A working [Nix installation](https://nix.dev/manual/nix/stable/installation/installation.html)
 - Basic knowledge of the [Nix language](reading-nix-language)
 
-## Starting from the default NixOS configuration
+:::{important}
+A NixOS configuration is a Nix language function following the [NixOS module](https://nixos.org/manual/nixos/stable/index.html#sec-writing-modules) convention.
+For a thorough treatment of the module system, check the [](module-system-deep-dive) tutorial.
+:::
 
-In this tutorial you will use the default configuration that is shipped with NixOS.[^nixosconf]
-[^nixosconf]: This [configuration template](https://github.com/NixOS/nixpkgs/blob/4e0525a8cdb370d31c1e1ba2641ad2a91fded57d/nixos/modules/installer/tools/tools.nix#L122-L226) is used.
+## Starting from a default NixOS configuration
 
-:::{admonition} NixOS
+:::{note}
+You can also skip this section and copy the [sample configuration](sample-nixos-config) for this tutorial into a file `configuration.nix` in the current directory.
+:::
 
-On NixOS, use the `nixos-generate-config` command to create a configuration file that contains some useful defaults and configuration suggestions.
-By default, the configuration file is located at `/etc/nixos/configuration.nix`.
-To avoid overwriting this file you have to specify the output directory.
+Use the `nixos-generate-config` command to create a configuration file that contains some useful defaults and configuration suggestions.
+The configuration produced from the following setup also is used for the [NixOS minimal ISO image](https://nixos.org/download#nixos-iso):
+
+```shell-session
+nix-shell -I nixpkgs=channel:nixos-24.05 -p "$(cat <<EOF
+  let
+    pkgs = import <nixpkgs> { config = {}; overlays = []; };
+    iso-config = pkgs.path + /nixos/modules/installer/cd-dvd/installation-cd-minimal.nix;
+    nixos = pkgs.nixos iso-config;
+  in nixos.config.system.build.nixos-generate-config
+EOF
+)"
+```
+
+:::{dropdown} Detailed explanation
+
+This `nix-shell` invocation creates an environment based on Nixpkgs obtained from a [channel](ref-pinning-nixpkgs) and adds to it a derivation that is described by the Nix expression passed as a string to the `-p` option.
+
+That Nix expression:
+- Takes the configuration file for the minimal ISO image from the obtained version of Nixpkgs found in the lookup path `<nixpkgs>`
+- Evaluates that NixOS configuration with `pkgs.nixos`
+- Returns the derivation which produces the `nixos-generate-config` executable from the evaluated configuration
+
+:::
+
 Create a NixOS configuration in your working directory:
 
 ```shell-session
-nixos-generate-config --dir ./
+[nix-shell:~]$ nixos-generate-config --dir ./
 ```
+
+:::{note}
+By default, when no `--dir` is specified, the generated configuration file is written to `/etc/nixos/configuration.nix`, which typically requires `sudo` permissions.
+:::
 
 In the working directory you will then find two files:
 
 1. `hardware-configuration.nix` is specific to the hardware `nix-generate-config` is being run on.
+
    You can ignore that file for this tutorial because it has no effect inside a virtual machine.
 
 2. `configuration.nix` contains various suggestions and comments for the initial setup of a desktop computer.
-:::
 
-The default configuration of NixOS without comments is:
+The default NixOS configuration without comments is:
 
 ```nix
 { config, pkgs, ... }:
@@ -54,40 +82,42 @@ The default configuration of NixOS without comments is:
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  services.xserver.enable = true;
-
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
-
-  system.stateVersion = "22.05";
+  system.stateVersion = "24.05";
 }
 ```
 
-To be able to log in add the following lines to the returned attribute set:
+To be able to log in, add the following lines to the returned attribute set:
 
 ```nix
   users.users.alice = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];
-    packages = with pkgs; [
-      firefox
-      tree
-    ];
   };
 ```
 
-:::{admonition} NixOS
-On NixOS your configuration generated using `nix-generate-config` contains this user configuration commented out.
+:::{note}
+A configuration generated with `nixos-generate-config` contains this user configuration commented out.
 :::
 
 Additionally, you need to specify a password for this user.
-For the purpose of demonstration only, you specify an insecure, plain text password by adding the `initialPassword` option to the user configuration:[^password]
-
-[^password]: Warning: Do not use plain text passwords outside of this example unless you know what you are doing. See [`initialHashedPassword`](https://nixos.org/manual/nixos/stable/options.html#opt-users.extraUsers._name_.initialHashedPassword) or [`ssh.authorizedKeys`](https://nixos.org/manual/nixos/stable/options.html#opt-users.extraUsers._name_.openssh.authorizedKeys.keys) for more secure alternatives.
+For the purpose of demonstration only, you specify an insecure, plain text password by adding the `initialPassword` option to the user configuration:
 
 ```nix
-initialPassword = "testpw";
+   initialPassword = "test";
 ```
+
+We add two lightweight programs as an example:
+
+```nix
+  environment.systemPackages = with pkgs; [
+    cowsay
+    lolcat
+  ];
+```
+
+:::{warning}
+Do not use plain text passwords outside of this example unless you know what you are doing. See [`initialHashedPassword`](https://nixos.org/manual/nixos/stable/options.html#opt-users.extraUsers._name_.initialHashedPassword) or [`ssh.authorizedKeys`](https://nixos.org/manual/nixos/stable/options.html#opt-users.extraUsers._name_.openssh.authorizedKeys.keys) for more secure alternatives.
+:::
 
 This tutorial focuses on testing NixOS configurations on a virtual machine.
 Therefore you will remove the reference to `hardware-configuration.nix`:
@@ -96,7 +126,149 @@ Therefore you will remove the reference to `hardware-configuration.nix`:
 -  imports =  [ ./hardware-configuration.nix ];
 ```
 
-The complete `configuration.nix` file now looks like this:
+(sample-nixos-config)=
+### Sample configuration
+
+The complete `configuration.nix` file looks like this:
+
+```nix
+{ config, pkgs, ... }:
+{
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  users.users.alice = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+    initialPassword = "test";
+  };
+
+  environment.systemPackages = with pkgs; [
+    cowsay
+    lolcat
+  ];
+
+  system.stateVersion = "24.05";
+}
+```
+
+## Creating a QEMU based virtual machine from a NixOS configuration
+
+A NixOS virtual machine is created with the `nix-build` command:
+
+```shell-session
+$ nix-build '<nixpkgs/nixos>' -A vm -I nixpkgs=channel:nixos-24.05 -I nixos-config=./configuration.nix
+```
+
+This command builds the attribute `vm` from the `nixos-24.05` release of NixOS, using the NixOS configuration as specified in the relative path.
+
+::::{dropdown} Detailed explanation
+
+- The positional argument to [`nix-build`](https://nix.dev/manual/nix/stable/command-ref/nix-build.html) is a path to the derivation to be built.
+  That path can be obtained from [a Nix expression that evaluates to a derivation](derivations).
+
+  The virtual machine build helper is defined in NixOS, which is part of the [`nixpkgs` repository](https://github.com/NixOS/nixpkgs).
+  Therefore we use the [lookup path](lookup-path-tutorial) `<nixpkgs/nixos>`.
+
+- The [`-A` option](https://nix.dev/manual/nix/stable/command-ref/opt-common.html#opt-attr) specifies the attribute to pick from the provided Nix expression `<nixpkgs/nixos>`.
+
+  To build the virtual machine, we choose the `vm` attribute as defined in [`nixos/default.nix`](https://github.com/NixOS/nixpkgs/blob/7c164f4bea71d74d98780ab7be4f9105630a2eba/nixos/default.nix#L19).
+
+- The [`-I` option](https://nix.dev/manual/nix/stable/command-ref/opt-common.html#opt-I) prepends entries to the search path.
+
+  Here we set `nixpkgs` to refer to a [specific version of Nixpkgs](ref-pinning-nixpkgs) and set `nix-config` to the `configuration.nix` file in the current directory.
+
+## Running the virtual machine
+
+The previous command created a link with the name `result` in the working directory.
+It links to the directory that contains the virtual machine.
+
+```shell-session
+$ ls -R ./result
+result:
+bin  system
+
+result/bin:
+run-nixos-vm
+```
+
+Run the virtual machine:
+
+```shell-session
+$ QEMU_KERNEL_PARAMS=console=ttyS0 ./result/bin/run-nixos-vm -nographic; reset
+```
+
+This command will run QEMU in the current terminal due to `-nographic`.
+`console=ttyS0` will also show the boot process, which ends at the console login screen.
+
+Log in as `alice` with the password `test`.
+Check that the programs are indeed available as specified:
+
+```shell-session
+$ cowsay hello | lolcat
+```
+
+Exit the virtual machine by shutting it down:
+
+```shell-session
+$ sudo poweroff
+```
+
+:::{note}
+If you forgot to add the user to `wheel` or didn't set a password, stop the virtual machine from a different terminal:
+
+```shell-session
+$ sudo pkill qemu
+```
+:::
+
+Running the virtual machine will create a `nixos.qcow2` file in the current directory.
+This disk image file contains the dynamic state of the virtual machine.
+It can interfere with debugging as it keeps the state of previous runs, for example the user password.
+
+Delete this file when you change the configuration:
+
+```shell-session
+$ rm nixos.qcow2
+```
+
+## Running GNOME on a graphical VM
+
+To create a virtual machine with a graphical user interface, add the following lines to the configuration:
+
+```nix
+  # Enable the X11 windowing system.
+  services.xserver.enable = true;
+
+  # Enable the GNOME Desktop Environment.
+  services.xserver.displayManager.gdm.enable = true;
+  services.xserver.desktopManager.gnome.enable = true;
+```
+
+These three lines activate X11, the GDM display manager (to be able to login) and Gnome as desktop manager.
+
+:::{tip}
+
+You can also use the `installation-cd-graphical-gnome.nix` module to generate the configuration file from scratch:
+
+```shell-session
+nix-shell -I nixpkgs=channel:nixos-24.05 -p "$(cat <<EOF
+  let
+    pkgs = import <nixpkgs> { config = {}; overlays = []; };
+    iso-config = pkgs.path + /nixos/modules/installer/cd-dvd/installation-cd-graphical-gnome.nix;
+    nixos = pkgs.nixos iso-config;
+  in nixos.config.system.build.nixos-generate-config
+EOF
+)"
+```
+
+```shell-session
+$ nixos-generate-config --dir ./
+```
+
+::::
+
+The complete `configuration.nix` file looks like this:
 
 ```nix
 { config, pkgs, ... }:
@@ -111,95 +283,88 @@ The complete `configuration.nix` file now looks like this:
 
   users.users.alice = {
     isNormalUser = true;
-    extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
-    packages = with pkgs; [
-      firefox
-      tree
-    ];
-    initialPassword = "testpw";
+    extraGroups = [ "wheel" ];
+    initialPassword = "test";
   };
 
-  system.stateVersion = "22.11";
+  system.stateVersion = "24.05";
 }
 ```
 
-## Creating a QEMU based virtual machine using a configuration
-
-A virtual machine is created with the `nix-build` command.
-
-To select `configuration.nix` in the working directory, specify the configuration file on the command line:
+To get graphical output, run the virtual machine without special options:
 
 ```shell-session
-nix-build '<nixpkgs/nixos>' -A vm \
--I nixpkgs=channel:nixos-22.11 \
--I nixos-config=./configuration.nix
+$ nix-build '<nixpkgs/nixos>' -A vm -I nixpkgs=channel:nixos-24.05 -I nixos-config=./configuration.nix
+$ ./result/bin/run-nixos-vm
 ```
 
-This command builds the attribute `vm` from the `nixos-22.11` release of NixOS, using the NixOS configuration as specified in the relative path.
+## Running Sway as Wayland compositor on a VM
 
-<details><summary> Detailed explanation </summary>
+To change to a Wayland compositor, disable `services.xserver.desktopManager.gnome` and enable `programs.sway`:
 
-The first optional argument of [`nix-build`](https://nixos.org/manual/nix/stable/command-ref/nix-build.html) is a path to the derivation to be built.
-With `'<nixpkgs>'` Nix is instructed to resolve the search path defined with the [`NIX_PATH` environment variable](https://nixos.org/manual/nix/stable/command-ref/env-common.html#env-NIX_PATH) or the [`-I` option](https://nixos.org/manual/nix/unstable/command-ref/opt-common.html#opt-I).
-The virtual machine setup is provided by NixOS, which is part of the `nixpkgs` repository, therefore we use `'<nixpkgs/nixos>'`.
-The [`-A` option](https://nixos.org/manual/nix/stable/command-ref/opt-common.html#opt-attr) specifies the attribute to pick from the provided [Nix expression `<nixpkgs>`](search-path-tutorial).
-To build the virtual machine, you choose the `vm` attribute as defined in [`nixos/default.nix`](https://github.com/NixOS/nixpkgs/blob/7c164f4bea71d74d98780ab7be4f9105630a2eba/nixos/default.nix#L19).
-The [`-I` option](https://nixos.org/manual/nix/stable/command-ref/opt-common.html#opt-I) adds search paths.
-Here we set `nixpkgs` to refer to a specific version of NixOS and to set `nix-config` to the `configuration.nix` file in the current directory.
+```{code-block} diff
+:caption: configuration.nix
+-  services.xserver.desktopManager.gnome.enable = true;
++  programs.sway.enable = true;
+```
 
-:::{admonition} NixOS
-On NixOS the `$NIX_PATH` environment variable is usually set up automatically, and there is also [a convenience command for building virtual machines](https://nixos.org/manual/nixos/stable/#sec-changing-config).
-You can use the current version of `nixpkgs` to build the virtual machine like this:
+:::{note}
+Running Wayland compositors in a virtual machine might lead to complications with the display drivers used by QEMU.
+You need to choose from the available drivers one that is compatible with Sway.
+See [QEMU User Documentation](https://www.qemu.org/docs/master/system/qemu-manpage.html) for options.
+One possibility is the `virtio-vga` driver:
+
 ```shell-session
-nixos-rebuild build-vm -I nixos-config=./configuration.nix
+$ ./result/bin/run-nixos-vm -device virtio-vga
 ```
+
+Arguments to QEMU can also be added to the configuration file:
+
+```nix
+{ config, pkgs, ... }:
+{
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  services.xserver.enable = true;
+
+  services.xserver.displayManager.gdm.enable = true;
+  programs.sway.enable = true;
+
+  imports = [ <nixpkgs/nixos/modules/virtualisation/qemu-vm.nix> ];
+  virtualisation.qemu.options = [
+    "-device virtio-vga"
+  ];
+
+  users.users.alice = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" ];
+    initialPassword = "test";
+  };
+
+  system.stateVersion = "24.05";
+}
+```
+
 :::
 
-</details>
+The NixOS manual has chapters on [X11](https://nixos.org/manual/nixos/stable/#sec-x11) and [Wayland](https://nixos.org/manual/nixos/stable/#sec-wayland) listing alternative window managers.
 
-## Running the virtual machine
+## References
 
-The previous command created a link with the name `result` in the working directory.
-It links to the directory that contains the virtual machine.
-
-```shell-session
-ls -R ./result
-```
-
-```console
-    result:
-    bin  system
-
-    result/bin:
-    run-nixos-vm
-```
-
-Run the virtual machine:
-
-```shell-session
-./result/bin/run-nixos-vm
-```
-
-This command opens a window that shows the boot process of the virtual machine and ends at the `gdm` login screen where you can log in as `alice` with the password `testpw`.
-
-Running the virtual machine will create a `nixos.qcow2` file in the current directory.
-This disk image file contains the dynamic state of the virtual machine.
-It can interfere with debugging as it keeps the state of previous runs, for example the user password.
-You should delete this file when you change the configuration:
-
-```shell-session
-rm nixos.qcow2
-```
-
-# References
-
-- [Nix manual: `nix-build` man page](https://nixos.org/manual/nix/stable/command-ref/nix-build.html).
-- [Nix manual: common cli options](https://nixos.org/manual/nix/stable/command-ref/opt-common.html).
-- [Nix manual: `NIX_PATH` environment variable](https://nixos.org/manual/nix/stable/command-ref/env-common.html#env-NIX_PATH).
 - [NixOS Manual: NixOS Configuration](https://nixos.org/manual/nixos/stable/index.html#ch-configuration).
 - [NixOS Manual: Modules](https://nixos.org/manual/nixos/stable/index.html#sec-writing-modules).
-- [NixOS Manual Reference: Options](https://nixos.org/manual/nixos/stable/options.html).
-- [NixOS Manual: NixOS cli](https://nixos.org/manual/nixos/stable/#sec-changing-config).
-- [Wiki entry: nixos-rebuild build-vm](https://nixos.wiki/wiki/NixOS:nixos-rebuild_build-vm).
+- [NixOS Manual Options reference](https://nixos.org/manual/nixos/stable/options.html).
+- [NixOS Manual: Changing the configuration](https://nixos.org/manual/nixos/stable/#sec-changing-config).
 - [NixOS source code: `configuration template` in `tools.nix`](https://github.com/NixOS/nixpkgs/blob/4e0525a8cdb370d31c1e1ba2641ad2a91fded57d/nixos/modules/installer/tools/tools.nix#L122-L226).
 - [NixOS source code: `vm` attribute in `default.nix`](https://github.com/NixOS/nixpkgs/blob/master/nixos/default.nix).
+- [Nix manual: `nix-build`](https://nix.dev/manual/nix/stable/command-ref/nix-build.html).
+- [Nix manual: common command-line options](https://nix.dev/manual/nix/stable/command-ref/opt-common.html).
+- [QEMU User Documentation](https://www.qemu.org/docs/master/system/qemu-manpage.html) for more runtime options
+- [NixOS option search: `virtualisation.qemu`](https://search.nixos.org/options?query=virtualisation.qemu) for declarative virtual machine configuration
+
+## Next steps
+
+- [](module-system-deep-dive)
+- [](integration-testing-vms)
+- [](bootable-iso-image)

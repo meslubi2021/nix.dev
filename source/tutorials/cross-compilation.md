@@ -10,6 +10,16 @@ myst:
 
 # Cross compilation
 
+Nixpkgs offers powerful tools to cross-compile software for various system types.
+
+## What do you need?
+
+
+- Experience using C compilers
+- Basic knowledge of the [Nix language](<reading-nix-language>)
+
+## Platforms
+
 When compiling code, we can distinguish between the **build platform**, where the executable is *built*, and the **host platform**, where the compiled executable *runs*. [^id3]
 
 **Native compilation** is the special case where those two platforms are the same.
@@ -32,14 +42,6 @@ In such cases, you would build a compiler on the *build platform*, run it to com
 
 Since this is rarely needed, we will assume that the target is identical to the host.
 
-## Pinning Nixpkgs
-
-To ensure the reproducibility of this tutorial as explained in {ref}`the pinning tutorial <pinning-nixpkgs>`:
-
-```shell-session
-$ NIX_PATH=nixpkgs=https://github.com/NixOS/nixpkgs/archive/9420363b95521e65a76eb5153de1eaee4a2e41c6.tar.gz
-```
-
 ## Determining the host platform config
 
 The build platform is determined automatically by Nix during the configure phase.
@@ -47,7 +49,7 @@ The build platform is determined automatically by Nix during the configure phase
 The host platform is best determined by running this command on the host platform:
 
 ```shell-session
-$ bash $(nix-build '<nixpkgs>' -A gnu-config)/config.guess
+$ $(nix-build '<nixpkgs>' -I nixpkgs=channel:nixos-23.11 -A gnu-config)/config.guess
 aarch64-unknown-linux-gnu
 ```
 
@@ -83,9 +85,16 @@ It's only possible to cross compile between `aarch64-darwin` and `x86_64-darwin`
 
 It is possible to explore them in `nix repl`:
 
+:::{note}
+[Starting with Nix 2.19](https://nix.dev/manual/nix/latest/release-notes/rl-2.19), `nix repl` requires the `-f` / `--file` flag:
 ```shell-session
-$ nix repl '<nixpkgs>'
-Welcome to Nix version 2.3.12. Type :? for help.
+$ nix repl -f '<nixpkgs>' -I nixpkgs=channel:nixos-23.11
+```
+:::
+
+```shell-session
+$ nix repl '<nixpkgs>' -I nixpkgs=channel:nixos-23.11
+Welcome to Nix 2.18.1. Type :? for help.
 
 Loading '<nixpkgs>'...
 Added 14200 variables.
@@ -120,7 +129,7 @@ pkgsCross.mmix                        pkgsCross.x86_64-unknown-redox
 pkgsCross.msp430
 ```
 
-These attribute names for cross compilation packages have been chosen somewhat freely over the course of time. 
+These attribute names for cross compilation packages have been chosen somewhat freely over the course of time.
 They usually do not match the corresponding platform config string.
 
 You can retrieve the platform string from `pkgsCross.<platform>.stdenv.hostPlatform.config`:
@@ -140,39 +149,30 @@ The mechanism for setting up cross compilation works as follows:
 
    The build platform is implied in `pkgs = import <nixpkgs> {}` to be the current system.
    This produces a build environment `pkgs.stdenv` with all the dependencies present to compile on the build platform.
-   
+
 2. Apply the appropriate host platform configuration to all the packages in `pkgsCross`.
 
    Taking `pkgs.pkgsCross.<host>.hello` will produce the package `hello` compiled on the build platform to run on the `<host>` platform.
-   
+
 There are multiple equivalent ways to access packages targeted to the host platform.
 
 1. Explicitly pick the host platform package from within the build platform environment:
 
    ```nix
    let
-     # all packages for the build system
-     pkgs = import <nixpkgs> {};
+     nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/release-23.11";
+     pkgs = import nixpkgs {};
    in
    pkgs.pkgsCross.aarch64-multiplatform.hello
    ```
-  
-   or
-  
-   ```nix
-   let
-     # all packages for `aarch64-multiplatform`
-     pkgs = (import <nixpkgs> {}).pkgsCross.aarch64-multiplatform;
-   in
-   pkgs.hello
-   ```
-  
-2. Pass the host platform to `crossSystem` when importing `<nixpkgs>`:
+
+2. Pass the host platform to `crossSystem` when importing `nixpkgs`.
+   This configures `nixpkgs` such that all its packages are build for the host platform:
 
    ```nix
    let
-     # conigure `nixpkgs` such that all its packages are build for the host platform
-     pkgs = import <nixpkgs> { crossSystem = { config = "aarch64-unknown-linux-gnu"; }; };
+     nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/release-23.11";
+     pkgs = import nixpkgs { crossSystem = { config = "aarch64-unknown-linux-gnu"; }; };
    in
    pkgs.hello
    ```
@@ -180,7 +180,9 @@ There are multiple equivalent ways to access packages targeted to the host platf
    Equivalently, you can pass the host platform as an argument to `nix-build`:
 
    ```sh
-   $ nix-build '<nixpkgs>' -A hello --arg crossSystem '{ config = "aarch64-unknown-linux-gnu"; }'
+   $ nix-build '<nixpkgs>' -I nixpkgs=channel:nixos-23.11 \
+     --arg crossSystem '{ config = "aarch64-unknown-linux-gnu"; }' \
+     -A hello
    ```
 
 ## Cross compiling for the first time
@@ -188,10 +190,15 @@ There are multiple equivalent ways to access packages targeted to the host platf
 To cross compile a package like [hello](https://www.gnu.org/software/hello/), pick the platform attribute — `aarch64-multiplatform` in our case — and run:
 
 ```shell-session
-$ nix-build '<nixpkgs>' -A pkgsCross.aarch64-multiplatform.hello
+$ nix-build '<nixpkgs>' -I nixpkgs=channel:nixos-23.11 \
+  -A pkgsCross.aarch64-multiplatform.hello
 ...
-/nix/store/pzi2h0d60nb4ydcl3nn7cbxxdnibw3sy-hello-aarch64-unknown-linux-gnu-2.10
+/nix/store/1dx87l5rav8679lqigf9xxkb7wvh2m4k-hello-aarch64-unknown-linux-gnu-2.12.1
 ```
+
+:::{note}
+The hash of the package in the store path changes with the updates to the channel.
+:::
 
 [Search for a package](https://search.nixos.org/packages) attribute name to find the one you're interested in building.
 
@@ -199,11 +206,13 @@ $ nix-build '<nixpkgs>' -A pkgsCross.aarch64-multiplatform.hello
 
 To show off the power of cross compilation in Nix, let's build our own Hello World program by cross compiling it as static executables to `armv6l-unknown-linux-gnueabihf` and `x86_64-w64-mingw32` (Windows) platforms and run the resulting executable with [an emulator](https://en.wikipedia.org/wiki/Emulator).
 
-```nix
-{ pkgs ? import <nixpkgs> {}
-}:
+Given we have a `cross-compile.nix`:
 
+```nix
 let
+  nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/release-23.11";
+  pkgs = import nixpkgs {};
+
   # Create a C program that prints Hello World
   helloWorld = pkgs.writeText "hello.c" ''
     #include <stdio.h>
@@ -256,9 +265,10 @@ It's also possible to provide an environment with a compiler configured for **cr
 Given we have a `shell.nix`:
 
 ```nix
-{ nixpkgs ? fetchTarball "https://github.com/NixOS/nixpkgs/archive/bba3474a5798b5a3a87e10102d1a55f19ec3fca5.tar.gz"
-, pkgs ? (import nixpkgs {}).pkgsCross.aarch64-multiplatform
-}:
+let
+  nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/release-23.11";
+  pkgs = (import nixpkgs {}).pkgsCross.aarch64-multiplatform;
+in
 
 # callPackage is needed due to https://github.com/NixOS/nixpkgs/pull/126844
 pkgs.pkgsStatic.callPackage ({ mkShell, zlib, pkg-config, file }: mkShell {
@@ -284,19 +294,19 @@ int main (void)
 We can cross compile it:
 
 ```shell-session
-$ nix-shell --run '$CC hello.c -o hello' cross-compile-shell.nix
+$ nix-shell --run '$CC hello.c -o hello' shell.nix
 ```
 
 And confirm it's aarch64:
 
 ```shell-session
-$ nix-shell --run 'file hello' cross-compile-shell.nix
+$ nix-shell --run 'file hello' shell.nix
 hello: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, with debug_info, not stripped
 ```
 
 ## Next steps
 
-- The [official binary cache](https://cache.nixos.org) has a limited number of binaries for packages that are cross compiled, so to save time recompiling, configure {ref}`a binary cache and CI (GitHub Actions and Cachix) <github-actions>`.
+- The [official binary cache](https://cache.nixos.org) has a limited number of binaries for packages that are cross compiled, so to save time recompiling, configure {ref}`your own binary cache and CI with GitHub Actions <github-actions>`.
 
 - While many compilers in Nixpkgs support cross compilation, not all of them do.
 

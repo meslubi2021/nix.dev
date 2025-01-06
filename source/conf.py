@@ -52,13 +52,15 @@ myst_enable_extensions = [
     "colon_fence",
     "linkify",
     "tasklist",
+    "attrs_block",
 ]
 
 # GitHub-style automatic anchors for headings
 myst_heading_anchors = 3
 
+myst_number_code_blocks = [ "nix", "python" ]
 
-copybutton_prompt_text = r"# |\$ "
+copybutton_prompt_text = r"\$ |nix-repl> "
 copybutton_prompt_is_regexp = True
 
 # Add any paths that contain templates here, relative to this directory.
@@ -77,7 +79,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "nix.dev"
-author = "the nix.dev contributors."
+author = "the <a href=\"https://nixos.org/community/teams/documentation\">Nix documentation team</a> and contributors."
 copyright = "2016-" + str(date.today().year) + ", NixOS Foundation"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -177,7 +179,7 @@ html_favicon = "favicon.png"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ['_static', 'tutorials/module-system/files']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -199,7 +201,6 @@ html_sidebars = {
         "about.html",
         "search-field.html",
         "sbt-sidebar-nav.html",
-        "subscribe.html",
     ],
 }
 
@@ -417,11 +418,17 @@ linkcheck_ignore = [
     r"https://matrix.to",
     # returns 403 on CI
     r"https://www.lesswrong.com",
+    r"https://www.raspberrypi.(com|org)",
     # Linkcheck fails on anchors in GH READMEs, see https://github.com/sphinx-doc/sphinx/issues/9016
-    r"https://github.com/cachix/install-nix-action#how-do-i-run-nixos-tests",
+    r"https://github.com/.+/.+#.+$",
     # Linkcheck fails on anchors in GH browser/file viewer, see https://github.com/sphinx-doc/sphinx/issues/11484
     r"https://github\.com/.+/.+/blob/.*#.*$",
     r"https://github\.com/.+/.+/tree/.*#.*$",
+    # XXX: we use the web URL to the manuals we host within the build output,
+    # because Sphinx does not have facilities to deploy arbitrary files.
+    # since linkchecking those URLs will fail before actually deploying them,
+    # we ignore them here.
+    r"https://nix.dev/manual/.*$",
 ]
 
 # Anchors are not present in HTML

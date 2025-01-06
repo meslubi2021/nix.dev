@@ -1,4 +1,4 @@
-# Documentation Project Proposal 2023
+# Documentation project proposal 2023
 
 ## Offer a learning journey for Nix beginners
 
@@ -50,7 +50,7 @@ As stretch goals, implement particular lessons identified as the most impactful 
 
    1. Develop a draft for a learning journey
    1. Validate the draft with Nix experts
-   1. Make the resulting outline immediately visible for beginners at well-known [touchpoints](https://en.m.wikipedia.org/wiki/Touchpoint).
+   1. Make the resulting outline immediately visible for beginners at well-known [touchpoints](https://en.wikipedia.org/wiki/Touchpoint).
 
 1. Categorise existing documentation materials into the [Diátaxis framework](https://diataxis.fr), and arrange them in a meaningful order emerging from the curriculum.
 
@@ -149,7 +149,7 @@ This phase involves review of the materials prepared by the documentation team, 
 
 The refined project plan is to be comprised of
 
-- Task breakdowns and assigments
+- Task breakdowns and assignments
 - Timeline with weekly granularity
 - Weekly schedules
 - An evaluation strategy
@@ -182,7 +182,7 @@ A technical background is a strong plus.
 | Phase         | Estimated effort |
 |---------------|------------------|
 | Planning      | 20h/w            |
-| Implemenation | 20h/w            |
+| Implementation | 20h/w            |
 | Evaluation    | 20h/w            |
 
 Total estimated effort: 240h
@@ -196,7 +196,7 @@ We can expect issues to emerge in the process, and the Nix expert will be respon
 | Phase         | Estimated effort |
 |---------------|------------------|
 | Planning      | 10h/w            |
-| Implemenation | 15h/w            |
+| Implementation | 15h/w            |
 | Evaluation    | 5h/w             |
 
 Total estimated effort: 120h
@@ -211,7 +211,7 @@ Proficiency in written communication in English, and basic experience with Markd
 | Phase         | Estimated effort |
 |---------------|------------------|
 | Planning      | 5h/w             |
-| Implemenation | 10h/w            |
+| Implementation | 10h/w            |
 | Evaluation    | 5h/w             |
 
 Total estimated effort: 80h

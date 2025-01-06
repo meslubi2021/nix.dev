@@ -22,8 +22,11 @@ $ echo no chance | lolcat
 The program ‘lolcat’ is currently not installed.
 ```
 
-Use `nix-shell` with the `-p` (`--packages`) option to specify that we need the `cowsay` and `lolcat` packages.
-The first invocation of `nix-shell` may take a while to download all dependencies.
+Use `nix-shell` with the `-p` (`--packages`) option to specify that we need the `cowsay` and `lolcat` packages:
+
+:::{note}
+The first invocation of `nix-shell` for these packages may take a while to download all dependencies.
+:::
 
 ```shell-session
 $ nix-shell -p cowsay lolcat
@@ -37,11 +40,11 @@ these 3 derivations will be built:
 
 Within the Nix shell, you can use the programs provided by these packages:
 
-```
+```shell-session
 [nix-shell:~]$ cowsay Hello, Nix! | lolcat
 ```
 
-Press type `exit` or press `CTRL-D` to exit the shell, and the programs won't be available anymore.
+Type `exit` or press `CTRL-D` to exit the shell, and the programs won't be available anymore.
 
 ```shell-session
 [nix-shell:~]$ exit
@@ -54,23 +57,40 @@ $ echo all gone | lolcat
 The program ‘lolcat’ is currently not installed.
 ```
 
+## Running programs once
+
+You can go even faster, by running any program directly:
+
+```console
+$ nix-shell -p cowsay --run "cowsay Nix"
+```
+
+If the command consists only of the program name, no quotes are needed:
+
+```console
+$ nix-shell -p hello --run hello
+```
+
 ## Search for packages
 
 What can you put in a shell environment?
 If you can think of it, there's probably a Nix package of it.
 
+:::{tip}
 Enter the program name you want to run in [search.nixos.org](https://search.nixos.org/packages) to find packages that provide it.
+:::
 
 For the following example, find the package names for these programs:
 
-- git
-- nvim
-- npm
+- `git`
+- `nvim`
+- `npm`
 
 In the search results, each item shows the package name, and the details list the available programs.[^2]
 
-[^2]: A package name is not the same as a program name. Many packges provide multiple programs, or no programs at all if they are libraries. Even for packages that provide exactly one program, the package and progam name are not necessarily the same.
+[^2]: A package name is not the same as a program name. Many packages provide multiple programs, or no programs at all if they are libraries. Even for packages that provide exactly one program, the package and program name are not necessarily the same.
 
+(run-any-program)=
 ## Run any combination of programs
 
 Once you have the package name, you can start a shell with that package.
@@ -99,6 +119,9 @@ these 151 paths will be fetched (186.43 MiB download, 1018.20 MiB unpacked):
 
 [nix-shell:~]$
 ```
+
+(check-package-version)=
+### Check package versions
 
 Check that you have indeed the specific version of these programs provided by Nix, even if you had any of them already installed on your machine.
 
@@ -139,6 +162,7 @@ Python 3.10.11
 
 Exit the shell as usual to return to the previous environment.
 
+(towards-reproducibility)=
 ## Towards reproducibility
 
 These shell environments are very convenient, but the examples so far are not reproducible yet.
@@ -152,18 +176,18 @@ The following example creates a fully reproducible environment.
 You can run it anywhere, anytime to obtain the exact same version of the `git`.
 
 ```shell-session
-$ nix-shell -p git --run "git --version" --pure -I nixpkgs=https://github.com/NixOS/nixpkgs/archive/2a601aafdc5605a5133a2ca506a34a3a73377247.tar.gz
+$ nix-shell -p git --run "git --version" --pure -I nixpkgs=https://github.com/NixOS/nixpkgs/tarball/2a601aafdc5605a5133a2ca506a34a3a73377247
 ...
 git version 2.33.1
 ```
 
 There are three things going on here:
 
-1. `--run` executes the given [Bash](https://www.gnu.org/software/bash/) command within the Nix shell and exits when it's done.
+1. `--run` executes the given [Bash command](https://www.gnu.org/software/bash/manual/bash.html#Shell-Commands) within the environment created by Nix, and exits when it's done.
 
    You can use this with `nix-shell` whenever you want to quickly run a program you don't have installed on your machine.
 
-2. `--pure` discards most environment variables set on your your system when running the shell.
+2. `--pure` discards most environment variables set on your system when running the shell.
 
    It means that only the `git` provided by Nix is available inside that shell.
    This is useful for simple one-liners such as in the example.
@@ -177,8 +201,8 @@ There are three things going on here:
 
 ## References
 
-- [Nix manual: `nix-shell`](https://nixos.org/manual/nix/stable/command-ref/nix-shell) (or run `man nix-shell`)
-- [Nix manual: `-I` option](https://nixos.org/manual/nix/unstable/command-ref/opt-common.html#opt-I)
+- [Nix manual: `nix-shell`](https://nix.dev/manual/nix/stable/command-ref/nix-shell) (or run `man nix-shell`)
+- [Nix manual: `-I` option](https://nix.dev/manual/nix/stable/command-ref/opt-common.html#opt-I)
 
 ## Next steps
 
